@@ -62,6 +62,12 @@ int main(int argC, char **argV)
     {
       return -1;
     }
-    printf("Filename: %s, file length: %d\n", binary_filename, binary_filelength);
+    printf("Filename: %s, file length: %d\n", binary_filename,
+           binary_filelength);
+    for (int i = 0; i < binary_filelength; i++)
+    {
+      print_byte(file_data[i]);
+    }
+    puts("");
     return 0;
 }

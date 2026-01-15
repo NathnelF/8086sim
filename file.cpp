@@ -22,11 +22,23 @@ int read_file(char **data, const char *filename)
     fclose(file);
     if (bytes_read != file_size)
     {
-        printf("Error: expected to read %zu bytes. Actually read %zu\n", file_size, bytes_read);
+        printf("Error: expected to read %zu bytes. Actually read %zu\n",
+               file_size, bytes_read);
         free(*data);
         *data = NULL;
         return -1;
     }
 
     return (int)bytes_read;
+}
+
+void print_byte(unsigned char byte)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        int bit = (byte >> i) & 1;
+        printf("%d", bit);
+    }
+    printf(" ");
+    return;
 }
