@@ -15,9 +15,36 @@
 
 */
 
-// TODO(Nate): add register enumeration (ability to show wide (ax) and (ah vs al))
+enum register_slot
+{
+    Register_None,
+    Register_1,
+    Register_2,
+    Register_3,
+    Register_4,
+    Register_5,
+    Register_6,
+    Register_7,
+    Register_8,
+};
 
-// TODO(Nate): add effective address (register + register + immediate) (with option for 0 on all three)
+struct register_value
+{
+    register_slot slot;
+    bool w_value; // 0 or 1.
+                  // Slot 1 w_value = 0 -> AL
+                  // Slot 1 w_value = 1 -> AX
+};
+
+struct effective_address
+{
+    register_value reg1;
+    register_value reg2;
+    int immediate;
+    // reg1.slot = Register_1, reg1.w_value = 1, reg2.slot = Register_none, immediate = 12 -> [AX + 12]
+    // reg1.slot = Register_1, reg1.w_value = 1, reg2.slot = Register_2, reg2.w_value = 1 immediate = 12 -> [AX + BX +
+    // 12]
+};
 
 enum instruction_type
 {
@@ -60,13 +87,12 @@ int main(int argC, char **argV)
     int binary_filelength = read_file(&file_data, binary_filename);
     if (binary_filelength == -1)
     {
-      return -1;
+        return -1;
     }
-    printf("Filename: %s, file length: %d\n", binary_filename,
-           binary_filelength);
+    printf("Filename: %s, file length: %d\n", binary_filename, binary_filelength);
     for (int i = 0; i < binary_filelength; i++)
     {
-      print_byte(file_data[i]);
+        print_byte(file_data[i]);
     }
     puts("");
     return 0;
