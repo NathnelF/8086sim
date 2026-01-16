@@ -2,16 +2,18 @@
 
 version: '3'
 
-vars:
-  GREETING: Hello, world!
-
 tasks:
-  default:
-    desc: Print a greeting message
-    cmds:
-      - echo "{{.GREETING}}"
-    silent: true
-
   build:
-     cmds:
-      - cl file.cpp main.cpp -o main.exe
+    cmds:
+        - cmd: cl file.cpp main.cpp -o main.exe
+          platforms: [windows]
+        - cmd: g++ file.cpp main.cpp -o main
+          platforms: [linux]
+
+  run:
+   deps: [build]
+   cmds:
+        - cmd: ./main.exe {{.CLI_ARGS}}
+          platforms: [windows]
+        - cmd: ./main {{.CLI_ARGS}}
+          platforms: [linux]
