@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int read_file(char **data, const char *filename)
+int read_file(unsigned char **data, const char *filename)
 {
     FILE *file = fopen(filename, "rb");
     if (!file)
@@ -16,7 +16,7 @@ int read_file(char **data, const char *filename)
     size_t file_size = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    *data = (char *)malloc(file_size);
+    *data = (unsigned char *)malloc(file_size);
 
     size_t bytes_read = fread(*data, 1, file_size, file);
     fclose(file);
@@ -34,7 +34,7 @@ int read_file(char **data, const char *filename)
 
 void print_byte(unsigned char byte)
 {
-    for (int i = 0; i < 8; i++)
+    for (int i = 7; i >= 0; i--)
     {
         int bit = (byte >> i) & 1;
         printf("%d", bit);

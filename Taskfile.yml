@@ -5,9 +5,9 @@ version: '3'
 tasks:
   build:
     cmds:
-        - cmd: cl file.cpp main.cpp table.cpp -o main.exe
+        - cmd: cl file.cpp main.cpp table.cpp decode.cpp -o main.exe
           platforms: [windows]
-        - cmd: g++ file.cpp main.cpp table.cpp -o main
+        - cmd: g++ file.cpp main.cpp table.cpp decode.cpp -o main
           platforms: [linux]
 
   run:

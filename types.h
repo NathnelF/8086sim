@@ -1,3 +1,7 @@
+#pragma once
+
+#include <stdio.h>
+
 enum register_slot
 {
     Register_None,
@@ -24,15 +28,30 @@ struct effective_address
     register_value reg1;
     register_value reg2;
     int immediate;
-    // reg1.slot = Register_1, reg1.w_value = 1, reg2.slot = Register_none, immediate = 12 -> [AX + 12]
-    // reg1.slot = Register_1, reg1.w_value = 1, reg2.slot = Register_2, reg2.w_value = 1 immediate = 12 -> [AX + BX +
-    // 12]
+    // reg1.slot = Register_1, reg1.w_value = 1, reg2.slot = Register_none,
+    // immediate = 12 -> [AX + 12] reg1.slot = Register_1, reg1.w_value = 1,
+    // reg2.slot = Register_2, reg2.w_value = 1 immediate = 12 -> [AX + BX + 12]
 };
 
 enum instruction_type
 {
     Instruction_None,
     Instruction_Mov,
+    Instruction_Add,
+    Instruction_Sub,
+    Instruction_Cmp,
+    Instruction_Jnz,
+};
+
+enum mov_type
+{
+    Mov_None,
+    Mov_Standard,
+    Mov_Immediate,
+    Mov_Immediate_Reg,
+    Mov_Mem_Accum,
+    Mov_Accum_Mem,
+    Mov_Segment_Reg
 };
 
 enum operand_type
