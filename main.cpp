@@ -32,20 +32,18 @@ int main(int argC, char **argV)
     }
     printf("Filename: %s, file length: %d\n", binary_filename,
            binary_filelength);
-    init_all_tables();
-    printf("Table sample: %d\n", instruction_table[5]);
+    init_instruction_table();
     int byte_count = 0;
     for (int i = 0; i < binary_filelength; i++)
     {
         unsigned char current_byte = file_data[i];
         instruction_type inst_type = get_instruction_type(current_byte);
-        if (inst_type == 1) //move instruction
+        if (inst_type.instruction == 1) // move instruction
         {
             print_instruction(instruction_table[current_byte]);
             printf("\n");
 
-            mov_type move_type = get_move_type(current_byte);
-            print_move_type(move_type);
+            print_move_type(inst_type.move_type);
             printf("\n");
 
             print_byte(current_byte);

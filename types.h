@@ -33,7 +33,7 @@ struct effective_address
     // reg2.slot = Register_2, reg2.w_value = 1 immediate = 12 -> [AX + BX + 12]
 };
 
-enum instruction_type
+enum base_instruction
 {
     Instruction_None,
     Instruction_Mov,
@@ -54,6 +54,17 @@ enum mov_type
     Mov_Segment_Reg
 };
 
+//TODO(Nate): add detailed types for add, sub, cmp, jnz
+
+struct instruction_type
+{
+    base_instruction instruction;
+    union {
+        mov_type move_type;
+    };
+};
+
+
 enum operand_type
 {
     Operand_None,
@@ -64,15 +75,15 @@ struct instruction_operands
 {
     operand_type type;
     union {
-        int register_index;
-        char *effective_addres;
+        register_slot register_index;
+        effective_address address;
         unsigned int immediate;
     };
 };
 
 struct instruction
 {
-    instruction_type type;
+    base_instruction type;
     instruction_operands operands[2];
     unsigned char length;
 };
