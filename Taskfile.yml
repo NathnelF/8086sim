@@ -3,25 +3,25 @@
 version: '3'
 
 tasks:
+  cmake:
+    cmds:
+        - cmd: cmake -G "Ninja" -B build
   build:
     cmds:
-        - cmd: cl file.cpp main.cpp table.cpp decode.cpp -o main.exe
-          platforms: [windows]
-        - cmd: g++ file.cpp main.cpp table.cpp decode.cpp -o main
-          platforms: [linux]
+        - cmd: cmake --build build
 
   run:
    deps: [build]
    cmds:
-        - cmd: ./main.exe {{.CLI_ARGS}}
+        - cmd: ./build/main.exe {{.CLI_ARGS}}
           platforms: [windows]
-        - cmd: ./main {{.CLI_ARGS}}
+        - cmd: ./build/main {{.CLI_ARGS}}
           platforms: [linux]
 
   test:
    deps: [build]
    cmds:
-        - cmd: ./main.exe asm/many_reg_mov
+        - cmd: ./build/main.exe asm/many_reg_mov
           platforms: [windows]
-        - cmd: ./main asm/many_reg_mov
+        - cmd: ./build/main asm/many_reg_mov
           platforms: [linux]

@@ -33,7 +33,7 @@ int main(int argC, char **argV)
     printf("Filename: %s, file length: %d\n", binary_filename,
            binary_filelength);
     init_instruction_table();
-    int byte_count = 0;
+    int memory_position = 0;
     for (int i = 0; i < binary_filelength; i++)
     {
         unsigned char current_byte = file_data[i];
@@ -49,7 +49,6 @@ int main(int argC, char **argV)
             print_byte(current_byte);
             printf("\n");
         }
-        byte_count++;
     }
     puts("");
     return 0;

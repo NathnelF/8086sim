@@ -54,7 +54,7 @@ enum mov_type
     Mov_Segment_Reg
 };
 
-//TODO(Nate): add detailed types for add, sub, cmp, jnz
+// TODO(Nate): add detailed types for add, sub, cmp, jnz
 
 struct instruction_type
 {
@@ -63,7 +63,6 @@ struct instruction_type
         mov_type move_type;
     };
 };
-
 
 enum operand_type
 {
@@ -83,7 +82,7 @@ struct instruction_operands
 
 struct instruction
 {
-    base_instruction type;
+    instruction_type type;
     instruction_operands operands[2];
     unsigned char length;
 };
