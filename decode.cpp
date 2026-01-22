@@ -1,7 +1,7 @@
 #include "decode.h"
+#include "file.h"
 #include "table.h"
 #include "types.h"
-#include <stdatomic.h>
 
 instruction_type get_instruction_type(unsigned char byte)
 {
@@ -34,14 +34,24 @@ void print_move_type(int type)
     printf("%s\n", mov_type_strings[type]);
 }
 
+void print_instruction_binary(unsigned char *memory, int memory_position,
+                              int instruction_length, int memory_length)
+{
+    if (memory_position + instruction_length > memory_length)
+    {
+        return;
+    }
+    for (int i = memory_position; i < memory_position + instruction_length; i++)
+    {
+        print_byte(memory[i]);
+    }
+    return;
+}
+
 int length_from_mod(unsigned char byte)
 {
-    // this is the second byte here
-    // mod is always high 2 bits
-    // r/m is always low 3 bits
     unsigned char mod = byte >> 6;
     unsigned char rm = byte & ((1 << 3) - 1);
-    // reg would be (byte >> 3) & ((1 << 3) - 1);
     if (mod == 0b00)
     {
         return 2;
@@ -69,11 +79,8 @@ int length_from_mod(unsigned char byte)
     return 0;
 }
 
-operand_type op_from_mod(unsigned char byte)
+operand_type op_from_mod(unsigned char mod)
 {
-    unsigned char mod = byte >> 6;
-    unsigned char rm = byte & ((1 << 3) - 1);
-    // reg would be (byte >> 3) & ((1 << 3) - 1);
     if (mod == 0b00)
     {
         return Operand_Memory;
@@ -342,14 +349,15 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
             get_register_value(instruction_data.w, instruction_data.reg);
 
         //  One is reg/memory
+        // TODO(Nate): This I don't think is working as intended
         operand2.type = op_from_mod(instruction_data.mod);
 
         if (operand2.type == Operand_Register)
         {
-            operand1.register_index =
-                get_register_value(instruction_data.w, instruction_data.reg);
+            operand2.register_index =
+                get_register_value(instruction_data.w, instruction_data.rm);
         }
-        else
+        if (operand2.type == Operand_Memory)
         {
             operand2.address = get_effective_address(
                 instruction_data.rm, instruction_data.displacement1,
@@ -452,7 +460,7 @@ void print_operand(instruction_operand op)
 
 void print_mov_instruction(instruction inst)
 {
-    printf("Mov ");
+    printf("mov ");
     print_operand(inst.operands[0]);
     printf(", ");
     print_operand(inst.operands[1]);
@@ -477,9 +485,14 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
         printf("Found instruction length of : %d\n", instruction_length);
         intermediate_instruction instruction_data = load_mov_instruction_data(
             memory, memory_length, memory_position, inst, instruction_length);
+        // TODO(Nate): Track down bug. Figure out why decoding is incorrect.
+        // Length, type and instruction data should be working, look at decode
+        // and operand functions
         final_instruction = decode_mov_instruction(
             memory, memory_length, memory_position, instruction_data);
         print_mov_instruction(final_instruction);
+        print_instruction_binary(memory, memory_position, instruction_length,
+                                 memory_length);
         break;
     }
     case Instruction_Add: {
