@@ -4,7 +4,6 @@
 
 enum register_slot
 {
-    Register_None,
     Register_1,
     Register_2,
     Register_3,
@@ -18,19 +17,15 @@ enum register_slot
 struct register_value
 {
     register_slot slot;
-    bool w_value; // 0 or 1.
-                  // Slot 1 w_value = 0 -> AL
-                  // Slot 1 w_value = 1 -> AX
+    bool w; // 0 or 1.
+            // Slot 1 w_value = 0 -> AL
+            // Slot 1 w_value = 1 -> AX
 };
 
 struct effective_address
 {
-    register_value reg1;
-    register_value reg2;
-    int immediate;
-    // reg1.slot = Register_1, reg1.w_value = 1, reg2.slot = Register_none,
-    // immediate = 12 -> [AX + 12] reg1.slot = Register_1, reg1.w_value = 1,
-    // reg2.slot = Register_2, reg2.w_value = 1 immediate = 12 -> [AX + BX + 12]
+    register_slot slot;
+    unsigned short immediate;
 };
 
 enum base_instruction
@@ -58,7 +53,7 @@ enum mov_type
 
 struct instruction_type
 {
-    base_instruction instruction;
+    base_instruction base;
     union {
         mov_type move_type;
     };
@@ -68,21 +63,38 @@ enum operand_type
 {
     Operand_None,
     Operand_Register,
+    Operand_Memory,
+    Operand_Immediate,
 };
 
-struct instruction_operands
+struct instruction_operand
 {
     operand_type type;
     union {
-        register_slot register_index;
+        register_value register_index;
         effective_address address;
-        unsigned int immediate;
+        unsigned short immediate;
     };
+};
+
+struct intermediate_instruction
+{
+    instruction_type type;
+    int length;
+    unsigned char d;
+    unsigned char w;
+    unsigned char mod;
+    unsigned char reg;
+    unsigned char rm;
+    unsigned char displacement1;
+    unsigned char displacement2;
+    unsigned char data1;
+    unsigned char data2;
 };
 
 struct instruction
 {
     instruction_type type;
-    instruction_operands operands[2];
-    unsigned char length;
+    instruction_operand operands[2];
+    int length;
 };

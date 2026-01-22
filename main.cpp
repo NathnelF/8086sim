@@ -23,32 +23,24 @@ int main(int argC, char **argV)
         printf("Usage: <run> <file>\n");
         return -1;
     }
-    const char *binary_filename = argV[1];
+    const char *file_name = argV[1];
     unsigned char *file_data;
-    int binary_filelength = read_file(&file_data, binary_filename);
-    if (binary_filelength == -1)
+    int file_length = read_file(&file_data, file_name);
+    if (file_length == -1)
     {
         return -1;
     }
-    printf("Filename: %s, file length: %d\n", binary_filename,
-           binary_filelength);
+    printf("Filename: %s, file length: %d\n", file_name, file_length);
     init_instruction_table();
-    int memory_position = 0;
-    for (int i = 0; i < binary_filelength; i++)
+    int file_position = 0;
+    while (file_position < file_length)
     {
-        unsigned char current_byte = file_data[i];
-        instruction_type inst_type = get_instruction_type(current_byte);
-        if (inst_type.instruction == 1) // move instruction
-        {
-            print_instruction(instruction_table[current_byte]);
-            printf("\n");
-
-            print_move_type(inst_type.move_type);
-            printf("\n");
-
-            print_byte(current_byte);
-            printf("\n");
-        }
+        instruction current_instruction =
+            decode_instruction(file_data, file_length, file_position);
+        file_position += current_instruction.length;
+    }
+    for (int i = 0; i < file_length; i++)
+    {
     }
     puts("");
     return 0;
