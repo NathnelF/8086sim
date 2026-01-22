@@ -39,9 +39,6 @@ int main(int argC, char **argV)
             decode_instruction(file_data, file_length, file_position);
         file_position += current_instruction.length;
     }
-    for (int i = 0; i < file_length; i++)
-    {
-    }
     puts("");
     return 0;
 }

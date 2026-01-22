@@ -23,5 +23,5 @@ tasks:
    cmds:
         - cmd: ./build/main.exe asm/many_reg_mov
           platforms: [windows]
-        - cmd: ./build/main asm/single_reg_mov
+        - cmd: ./build/main asm/mor_mov
           platforms: [linux]

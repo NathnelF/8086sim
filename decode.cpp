@@ -45,6 +45,7 @@ void print_instruction_binary(unsigned char *memory, int memory_position,
     {
         print_byte(memory[i]);
     }
+    puts("");
     return;
 }
 
@@ -54,18 +55,15 @@ int length_from_mod(unsigned char byte)
     unsigned char rm = byte & ((1 << 3) - 1);
     if (mod == 0b00)
     {
-        return 2;
-    }
-    if (mod == 0b01)
-    {
         if (rm == 0b110)
         {
             return 2;
         }
-        else
-        {
-            return 1;
-        }
+        return 0;
+    }
+    if (mod == 0b01)
+    {
+        return 1;
     }
     if (mod == 0b10)
     {
@@ -103,6 +101,9 @@ operand_type op_from_mod(unsigned char mod)
 
 register_value get_register_value(unsigned char w, unsigned char reg)
 {
+    // printf("w value: %d", w);
+    // printf(" reg value: %d", reg);
+    // puts("");
     register_value register_val = {};
     if (w == 0b0)
     {
@@ -154,7 +155,7 @@ int get_mov_instruction_length(unsigned char *memory, int memory_length,
         length += length_from_mod(byte2);
         return length;
     }
-    case Mov_Immediate: {
+    case Mov_Immediate_Reg: {
         int length = 2; // always at least two
         unsigned char byte1 = memory[memory_position];
         unsigned char w = (byte1 >> 3) & 1;
@@ -164,7 +165,7 @@ int get_mov_instruction_length(unsigned char *memory, int memory_length,
         }
         return length;
     }
-    case Mov_Immediate_Reg: {
+    case Mov_Immediate: {
         int length = 3; // always at least three
         unsigned char byte1 = memory[memory_position];
         unsigned char byte2 = memory[memory_position + 1];
@@ -198,7 +199,7 @@ intermediate_instruction load_mov_instruction_data(unsigned char *memory,
 {
     intermediate_instruction instruction_data = {};
     instruction_data.type = inst;
-    print_move_type(inst.move_type);
+    // print_move_type(inst.move_type);
     instruction_data.length = instruction_length;
     if (memory_position + instruction_length > memory_length)
     {
@@ -237,11 +238,11 @@ intermediate_instruction load_mov_instruction_data(unsigned char *memory,
         }
         return instruction_data;
     }
-    case Mov_Immediate: {
+    case Mov_Immediate_Reg: {
         instruction_data.type = inst;
 
         instruction_data.w = (memory[memory_position] >> 3) & 1;
-        instruction_data.reg = memory[memory_position] >> 3;
+        instruction_data.reg = memory[memory_position] & ((1 << 3) - 1);
 
         instruction_data.data1 = memory[memory_position + 1];
 
@@ -251,7 +252,7 @@ intermediate_instruction load_mov_instruction_data(unsigned char *memory,
         }
         return instruction_data;
     }
-    case Mov_Immediate_Reg: {
+    case Mov_Immediate: {
         instruction_data.type = inst;
         instruction_data.d = memory[memory_position] >> 1 & 1;
         instruction_data.w = memory[memory_position] & 1;
@@ -349,7 +350,6 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
             get_register_value(instruction_data.w, instruction_data.reg);
 
         //  One is reg/memory
-        // TODO(Nate): This I don't think is working as intended
         operand2.type = op_from_mod(instruction_data.mod);
 
         if (operand2.type == Operand_Register)
@@ -377,7 +377,8 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
 
         return final_instruction;
     }
-    case Mov_Immediate: {
+    case Mov_Immediate_Reg: {
+
         // One is reg
         operand1.type = Operand_Register;
         operand1.register_index =
@@ -390,7 +391,7 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
         final_instruction.operands[1] = operand2;
         return final_instruction;
     }
-    case Mov_Immediate_Reg: {
+    case Mov_Immediate: {
         // One is reg/memory
         operand1.type = op_from_mod(instruction_data.mod);
 
@@ -409,7 +410,9 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
         operand2.type = Operand_Immediate;
         operand2.immediate =
             instruction_data.data1 | (instruction_data.data2 << 8);
-        break;
+        final_instruction.operands[0] = operand1;
+        final_instruction.operands[1] = operand2;
+        return final_instruction;
     }
     case Mov_Mem_Accum: {
         break;
@@ -422,7 +425,7 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
     }
     }
 
-    printf("Error: should not have gotten here");
+    printf("Error: unexpectedly reached end of function\n");
     return final_instruction;
 }
 
@@ -448,8 +451,17 @@ void print_operand(instruction_operand op)
         break;
     }
     case Operand_Memory: {
-        printf("%s + %hu", effective_address_string_lookup[op.address.slot],
-               op.address.immediate);
+        if (op.address.immediate)
+        {
+            printf("[%s + %hu]",
+                   effective_address_string_lookup[op.address.slot],
+                   op.address.immediate);
+        }
+        else
+        {
+            printf("[%s]", effective_address_string_lookup[op.address.slot]);
+        }
+        break;
     }
     case Operand_Immediate: {
         printf("+ %hu", op.immediate);
@@ -471,28 +483,24 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
                                int &memory_position)
 {
     instruction final_instruction = {};
-    instruction_type inst = get_instruction_type(memory[0]);
+    instruction_type inst = get_instruction_type(memory[memory_position]);
     switch (inst.base)
     {
     case Instruction_None: {
-        printf("Error: invalid instruction type");
-        break;
+        printf("Error: invalid instruction type\n");
+        final_instruction.length = memory_length;
+        return final_instruction;
     }
     case Instruction_Mov: {
-        printf("Move instruction encountered:\n");
         int instruction_length = get_mov_instruction_length(
             memory, memory_length, memory_position, inst);
-        printf("Found instruction length of : %d\n", instruction_length);
         intermediate_instruction instruction_data = load_mov_instruction_data(
             memory, memory_length, memory_position, inst, instruction_length);
-        // TODO(Nate): Track down bug. Figure out why decoding is incorrect.
-        // Length, type and instruction data should be working, look at decode
-        // and operand functions
         final_instruction = decode_mov_instruction(
             memory, memory_length, memory_position, instruction_data);
         print_mov_instruction(final_instruction);
-        print_instruction_binary(memory, memory_position, instruction_length,
-                                 memory_length);
+        // print_instruction_binary(memory, memory_position, instruction_length,
+        //                          memory_length);
         break;
     }
     case Instruction_Add: {

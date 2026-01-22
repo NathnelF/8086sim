@@ -56,6 +56,5 @@ void init_instruction_table()
     // TODO(Nate): Add sub instructions
     // TODO(Nate): Add cmp instructions
     // TODO(Nate): Add jnz instructions
-    // TODO(Nate): Account for same first byte assigned to multiple?
     // instructions?
 }
