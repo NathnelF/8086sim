@@ -36,17 +36,22 @@ enum base_instruction
     Instruction_Sub,
     Instruction_Cmp,
     Instruction_Jnz,
+    Instruction_Arithmetic,
 };
 
-enum mov_type
+// For arithmetic instructions
+// There are three instructions with the same opcode,
+// They are decoded by the middle 3 bits in the second byte
+// for these cases we need to check the second bit to deduce the correct form
+
+enum form_type
 {
-    Mov_None,
-    Mov_Standard,
-    Mov_Immediate,
-    Mov_Immediate_Reg,
-    Mov_Mem_Accum,
-    Mov_Accum_Mem,
-    Mov_Segment_Reg
+    Form_None,
+    Form_Standard,
+    Form_Immediate,
+    Form_Immediate_Reg,
+    Form_Immediate_Accum,
+    Form_Immediate_Arithmetic,
 };
 
 // TODO(Nate): add detailed types for add, sub, cmp, jnz
@@ -55,7 +60,7 @@ struct instruction_type
 {
     base_instruction base;
     union {
-        mov_type move_type;
+        form_type form;
     };
 };
 
@@ -82,6 +87,7 @@ struct intermediate_instruction
     instruction_type type;
     int length;
     unsigned char d;
+    unsigned char s;
     unsigned char w;
     unsigned char mod;
     unsigned char reg;

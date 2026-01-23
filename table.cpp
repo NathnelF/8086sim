@@ -12,49 +12,74 @@ void init_instruction_table()
     // Statically assign first byte values to instructions.
     //
     // Register/memory to/ from register
-    instruction_table[0b10001000] = {Instruction_Mov, Mov_Standard};
-    instruction_table[0b10001001] = {Instruction_Mov, Mov_Standard};
-    instruction_table[0b10001010] = {Instruction_Mov, Mov_Standard};
-    instruction_table[0b10001011] = {Instruction_Mov, Mov_Standard};
+    instruction_table[0b10001000] = {Instruction_Mov, Form_Standard};
+    instruction_table[0b10001001] = {Instruction_Mov, Form_Standard};
+    instruction_table[0b10001010] = {Instruction_Mov, Form_Standard};
+    instruction_table[0b10001011] = {Instruction_Mov, Form_Standard};
 
     // Immediate to Register/Memory
-    instruction_table[0b11000110] = {Instruction_Mov, Mov_Immediate};
-    instruction_table[0b11000111] = {Instruction_Mov, Mov_Immediate};
+    instruction_table[0b11000110] = {Instruction_Mov, Form_Immediate};
+    instruction_table[0b11000111] = {Instruction_Mov, Form_Immediate};
 
     // Immediate to reg movs
-    instruction_table[0b10110000] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10110001] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10110010] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10110011] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10110100] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10110101] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10110110] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10110111] = {Instruction_Mov, Mov_Immediate_Reg};
+    instruction_table[0b10110000] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10110001] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10110010] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10110011] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10110100] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10110101] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10110110] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10110111] = {Instruction_Mov, Form_Immediate_Reg};
 
-    instruction_table[0b10111000] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10111001] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10111010] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10111011] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10111100] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10111101] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10111110] = {Instruction_Mov, Mov_Immediate_Reg};
-    instruction_table[0b10111111] = {Instruction_Mov, Mov_Immediate_Reg};
+    instruction_table[0b10111000] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10111001] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10111010] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10111011] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10111100] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10111101] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10111110] = {Instruction_Mov, Form_Immediate_Reg};
+    instruction_table[0b10111111] = {Instruction_Mov, Form_Immediate_Reg};
 
-    // Memory to accumulator
-    instruction_table[0b10100000] = {Instruction_Mov, Mov_Mem_Accum};
-    instruction_table[0b10100001] = {Instruction_Mov, Mov_Mem_Accum};
+    // Register/Memory with Register to either
+    instruction_table[0b00000000] = {Instruction_Add, Form_Standard};
+    instruction_table[0b00000001] = {Instruction_Add, Form_Standard};
+    instruction_table[0b00000010] = {Instruction_Add, Form_Standard};
+    instruction_table[0b00000011] = {Instruction_Add, Form_Standard};
 
-    // Accumulator to memory
-    instruction_table[0b10100010] = {Instruction_Mov, Mov_Accum_Mem};
-    instruction_table[0b10100011] = {Instruction_Mov, Mov_Accum_Mem};
+    // Immediate to Register/Memory
+    instruction_table[0b10000000] = {Instruction_Arithmetic,
+                                     Form_Immediate_Arithmetic};
+    instruction_table[0b10000001] = {Instruction_Arithmetic,
+                                     Form_Immediate_Arithmetic};
+    instruction_table[0b10000010] = {Instruction_Arithmetic,
+                                     Form_Immediate_Arithmetic};
+    instruction_table[0b10000011] = {Instruction_Arithmetic,
+                                     Form_Immediate_Arithmetic};
 
-    // Register/Memory to segment register
-    instruction_table[0b10001110] = {Instruction_Mov, Mov_Segment_Reg};
-    instruction_table[0b10001100] = {Instruction_Mov, Mov_Segment_Reg};
+    // Immediate to Accumulator
+    instruction_table[0b00000100] = {Instruction_Add, Form_Immediate_Accum};
+    instruction_table[0b00000101] = {Instruction_Add, Form_Immediate_Accum};
 
-    // TODO(Nate): Add add instructions
-    // TODO(Nate): Add sub instructions
-    // TODO(Nate): Add cmp instructions
-    // TODO(Nate): Add jnz instructions
-    // instructions?
+    // Register/Memory and register to either
+    instruction_table[0b00101000] = {Instruction_Sub, Form_Standard};
+    instruction_table[0b00101001] = {Instruction_Sub, Form_Standard};
+    instruction_table[0b00101010] = {Instruction_Sub, Form_Standard};
+    instruction_table[0b00101011] = {Instruction_Sub, Form_Standard};
+
+    // Immediate from accumulator
+    instruction_table[0b00101100] = {Instruction_Sub, Form_Immediate_Accum};
+    instruction_table[0b00101101] = {Instruction_Sub, Form_Immediate_Accum};
+
+    // Register/Memory and register
+    instruction_table[0b00111000] = {Instruction_Cmp, Form_Standard};
+    instruction_table[0b00111001] = {Instruction_Cmp, Form_Standard};
+    instruction_table[0b00111010] = {Instruction_Cmp, Form_Standard};
+    instruction_table[0b00111011] = {Instruction_Cmp, Form_Standard};
+
+    // Immediate with accumulator
+    instruction_table[0b00111100] = {Instruction_Cmp, Form_Immediate_Accum};
+    instruction_table[0b00111101] = {Instruction_Cmp, Form_Immediate_Accum};
+
+    //  TODO(Nate): Add jnz instructions
+    //  instructions?
 }

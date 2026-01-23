@@ -2,23 +2,52 @@
 #include "file.h"
 #include "table.h"
 #include "types.h"
+#include <stdatomic.h>
 
-instruction_type get_instruction_type(unsigned char byte)
+instruction_type get_instruction_type(unsigned char *memory,
+                                      int memory_position, int memory_length)
 {
-    instruction_type type = instruction_table[byte];
-    return type;
+    instruction_type type = instruction_table[memory[memory_position]];
+    if (type.base != Instruction_Arithmetic)
+    {
+        return type;
+    }
+    else
+    {
+        // need to look into second byte for subtype
+        unsigned char identifier =
+            (memory[memory_position + 1] >> 3) & ((1 << 3) - 1);
+        if (identifier == 0b000)
+        {
+            type.base = Instruction_Add;
+        }
+        else if (identifier == 0b101)
+        {
+            type.base = Instruction_Sub;
+        }
+        else if (identifier == 0b111)
+        {
+            type.base = Instruction_Cmp;
+        }
+        else
+        {
+            type.base = Instruction_None;
+            type.form = Form_None;
+        }
+        return type;
+    }
 }
 
 void print_instruction_type(instruction_type instruction_val)
 {
     const char *instruction_strings[6] = {
-        "None", "Mov", "Add", "Sub", "Cmp", "Jnz",
+        "none", "mov", "add", "sub", "cmp", "jnz",
     };
 
-    printf("%s\n", instruction_strings[instruction_val.base]);
+    printf("%s ", instruction_strings[instruction_val.base]);
 }
 
-void print_move_type(int type)
+void print_form_type(int type)
 {
 
     const char *mov_type_strings[7] = {
@@ -26,9 +55,8 @@ void print_move_type(int type)
         "Standard Mov",
         "Immediate to Register/Memory",
         "Immediate to Register",
-        "Memory to Accumulator",
-        "Accumulator to Memory",
-        "Segment Register to Register/Memory",
+        "Immediate to Accumulator",
+        "Immediate Arithmetic",
     };
 
     printf("%s\n", mov_type_strings[type]);
@@ -139,23 +167,23 @@ effective_address get_effective_address(unsigned char rm, unsigned char disp1,
     return address;
 }
 
-int get_mov_instruction_length(unsigned char *memory, int memory_length,
-                               int &memory_position, instruction_type inst)
+int get_instruction_length(unsigned char *memory, int memory_length,
+                           int &memory_position, instruction_type inst)
 {
-    mov_type move_operation = inst.move_type;
+    form_type move_operation = inst.form;
     switch (move_operation)
     {
-    case Mov_None: {
+    case Form_None: {
         return 0;
     }
-    case Mov_Standard: {
+    case Form_Standard: {
         int length = 2; // always at least two
 
         unsigned char byte2 = memory[memory_position + 1];
         length += length_from_mod(byte2);
         return length;
     }
-    case Mov_Immediate_Reg: {
+    case Form_Immediate_Reg: {
         int length = 2; // always at least two
         unsigned char byte1 = memory[memory_position];
         unsigned char w = (byte1 >> 3) & 1;
@@ -165,7 +193,7 @@ int get_mov_instruction_length(unsigned char *memory, int memory_length,
         }
         return length;
     }
-    case Mov_Immediate: {
+    case Form_Immediate: {
         int length = 3; // always at least three
         unsigned char byte1 = memory[memory_position];
         unsigned char byte2 = memory[memory_position + 1];
@@ -178,25 +206,37 @@ int get_mov_instruction_length(unsigned char *memory, int memory_length,
         return length;
         break;
     }
-    case Mov_Mem_Accum: {
-        return -1;
+    case Form_Immediate_Accum: {
+        int length = 2; // always at least two
+        unsigned char w = memory[memory_position] & 1;
+        if (w == 0b1)
+        {
+            length += 1;
+        }
+        return length;
     }
-    case Mov_Accum_Mem: {
-        return -1;
-    }
-    case Mov_Segment_Reg: {
-        return -1;
+    case Form_Immediate_Arithmetic: {
+        int length = 3; // always at least three
+        unsigned char s = memory[memory_position] >> 1 & 1;
+        unsigned char w = memory[memory_position] & 1;
+        length += length_from_mod(memory[memory_position + 1]);
+        if (w == 0b1 && s == 0b0)
+        {
+            length += 1;
+        }
+        return length;
     }
     }
     return -1;
 }
 
-intermediate_instruction load_mov_instruction_data(unsigned char *memory,
-                                                   int memory_length,
-                                                   int &memory_position,
-                                                   instruction_type inst,
-                                                   int instruction_length)
+intermediate_instruction load_instruction_data(unsigned char *memory,
+                                               int memory_length,
+                                               int &memory_position,
+                                               instruction_type inst,
+                                               int instruction_length)
 {
+    print_form_type(inst.form);
     intermediate_instruction instruction_data = {};
     instruction_data.type = inst;
     // print_move_type(inst.move_type);
@@ -206,13 +246,13 @@ intermediate_instruction load_mov_instruction_data(unsigned char *memory,
         printf("Error: instruction size exceeds binary memory");
         return instruction_data;
     }
-    switch (inst.move_type)
+    switch (inst.form)
     {
-    case Mov_None: {
+    case Form_None: {
         instruction_data.type = {Instruction_None, {}};
         return instruction_data;
     }
-    case Mov_Standard: {
+    case Form_Standard: {
         instruction_data.type = inst;
         instruction_data.d = memory[memory_position] >> 1 & 1;
         instruction_data.w = memory[memory_position] & 1;
@@ -238,7 +278,7 @@ intermediate_instruction load_mov_instruction_data(unsigned char *memory,
         }
         return instruction_data;
     }
-    case Mov_Immediate_Reg: {
+    case Form_Immediate_Reg: {
         instruction_data.type = inst;
 
         instruction_data.w = (memory[memory_position] >> 3) & 1;
@@ -252,7 +292,7 @@ intermediate_instruction load_mov_instruction_data(unsigned char *memory,
         }
         return instruction_data;
     }
-    case Mov_Immediate: {
+    case Form_Immediate: {
         instruction_data.type = inst;
         instruction_data.d = memory[memory_position] >> 1 & 1;
         instruction_data.w = memory[memory_position] & 1;
@@ -308,16 +348,57 @@ intermediate_instruction load_mov_instruction_data(unsigned char *memory,
 
         return instruction_data;
     }
-    case Mov_Mem_Accum: {
-        printf("Error: Implement this move type");
+    case Form_Immediate_Accum: {
+        instruction_data.w = memory[memory_position] & 1;
+        instruction_data.data1 = memory[memory_position + 1];
+        if (instruction_data.w == 0b1)
+        {
+            instruction_data.data2 = memory[memory_position + 2];
+        }
         return instruction_data;
     }
-    case Mov_Accum_Mem: {
-        printf("Error: Implement this move type");
-        return instruction_data;
-    }
-    case Mov_Segment_Reg: {
-        printf("Error: Implement this move type");
+    case Form_Immediate_Arithmetic: {
+        instruction_data.s = memory[memory_position] >> 1 & 1;
+        instruction_data.w = memory[memory_position] & 1;
+
+        instruction_data.mod = memory[memory_position + 1] >> 6;
+        instruction_data.rm = memory[memory_position + 1] & ((1 << 3) - 1);
+
+        // displacements
+        if ((instruction_data.mod == 0b00 && instruction_data.rm == 0b110) ||
+            instruction_data.mod == 0b10)
+        {
+            // 16 bit displacement
+            instruction_data.displacement1 = memory[memory_position + 2];
+            instruction_data.displacement2 = memory[memory_position + 3];
+            instruction_data.data1 = memory[memory_position + 4];
+            // immediate depends on s and w
+            if (instruction_data.w == 0b1 && instruction_data.s == 0b0)
+            {
+                // 2 byte immediate
+                instruction_data.data2 = memory[memory_position + 5];
+            }
+        }
+        else if (instruction_data.mod == 0b01)
+        {
+            // 8 bit displacement
+            instruction_data.displacement1 = memory[memory_position + 2];
+            instruction_data.data1 = memory[memory_position + 3];
+            if (instruction_data.w == 0b1 && instruction_data.s == 0b0)
+            {
+                // 2 byte immediate
+                instruction_data.data2 = memory[memory_position + 4];
+            }
+        }
+        else
+        {
+            // no displacement
+            instruction_data.data1 = memory[memory_position + 2];
+            if (instruction_data.w == 0b1 && instruction_data.s == 0b0)
+            {
+                instruction_data.data2 = memory[memory_position + 3];
+            }
+        }
         return instruction_data;
     }
     }
@@ -325,25 +406,25 @@ intermediate_instruction load_mov_instruction_data(unsigned char *memory,
     return instruction_data;
 }
 
-instruction decode_mov_instruction(unsigned char *memory, int memory_length,
-                                   int &memory_position,
-                                   intermediate_instruction instruction_data)
+instruction decode_instruction_data(unsigned char *memory, int memory_length,
+                                    int &memory_position,
+                                    intermediate_instruction instruction_data)
 {
     instruction_operand operand1 = {};
     instruction_operand operand2 = {};
     instruction final_instruction = {};
     final_instruction.type = instruction_data.type;
     final_instruction.length = instruction_data.length;
-    switch (instruction_data.type.move_type)
+    switch (instruction_data.type.form)
     {
-    case Mov_None: {
+    case Form_None: {
         operand1.type = Operand_None;
         operand2.type = Operand_None;
         final_instruction.operands[0] = operand1;
         final_instruction.operands[1] = operand2;
         return final_instruction;
     }
-    case Mov_Standard: {
+    case Form_Standard: {
         // One is reg
         operand1.type = Operand_Register;
         operand1.register_index =
@@ -377,7 +458,7 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
 
         return final_instruction;
     }
-    case Mov_Immediate_Reg: {
+    case Form_Immediate_Reg: {
 
         // One is reg
         operand1.type = Operand_Register;
@@ -391,20 +472,20 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
         final_instruction.operands[1] = operand2;
         return final_instruction;
     }
-    case Mov_Immediate: {
+    case Form_Immediate: {
         // One is reg/memory
         operand1.type = op_from_mod(instruction_data.mod);
 
         if (operand1.type == Operand_Register)
         {
             operand1.register_index =
-                get_register_value(instruction_data.w, instruction_data.reg);
+                get_register_value(instruction_data.w, instruction_data.rm);
         }
         else
         {
             operand1.address = get_effective_address(
                 instruction_data.rm, instruction_data.displacement1,
-                instruction_data.displacement1);
+                instruction_data.displacement2);
         }
         // One is immediate
         operand2.type = Operand_Immediate;
@@ -414,18 +495,53 @@ instruction decode_mov_instruction(unsigned char *memory, int memory_length,
         final_instruction.operands[1] = operand2;
         return final_instruction;
     }
-    case Mov_Mem_Accum: {
-        break;
+    case Form_Immediate_Accum: {
+        operand1.type = Operand_Register;
+        operand1.register_index = {Register_1,
+                                   instruction_data.w ? true : false};
+
+        operand2.type = Operand_Immediate;
+        operand2.immediate =
+            instruction_data.data1 | (instruction_data.data2 << 8);
+        final_instruction.operands[0] = operand1;
+        final_instruction.operands[1] = operand2;
+        return final_instruction;
     }
-    case Mov_Accum_Mem: {
-        break;
-    }
-    case Mov_Segment_Reg: {
-        break;
+    case Form_Immediate_Arithmetic: {
+        // one is reg/memory
+        operand1.type = op_from_mod(instruction_data.mod);
+
+        if (operand1.type == Operand_Register)
+        {
+            operand1.register_index =
+                get_register_value(instruction_data.w, instruction_data.rm);
+        }
+        else
+        {
+            operand1.address = get_effective_address(
+                instruction_data.rm, instruction_data.displacement1,
+                instruction_data.displacement2);
+        }
+
+        // one is immediate
+        operand2.type = Operand_Immediate;
+        if (instruction_data.s == 0b1 && instruction_data.w == 0b1)
+        {
+            operand2.immediate =
+                (unsigned short)(short)(signed char)instruction_data.data1;
+        }
+        else
+        {
+            operand2.immediate =
+                instruction_data.data1 | ((instruction_data.data2) << 8);
+        }
+        final_instruction.operands[0] = operand1;
+        final_instruction.operands[1] = operand2;
+        return final_instruction;
     }
     }
 
-    printf("Error: unexpectedly reached end of function\n");
+    printf("Error: unexpectedly reached end of decode_instruction_data\n");
     return final_instruction;
 }
 
@@ -464,15 +580,15 @@ void print_operand(instruction_operand op)
         break;
     }
     case Operand_Immediate: {
-        printf("+ %hu", op.immediate);
+        printf("%hu", op.immediate);
         break;
     }
     }
 }
 
-void print_mov_instruction(instruction inst)
+void print_instruction(instruction inst)
 {
-    printf("mov ");
+    print_instruction_type(inst.type);
     print_operand(inst.operands[0]);
     printf(", ");
     print_operand(inst.operands[1]);
@@ -483,7 +599,8 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
                                int &memory_position)
 {
     instruction final_instruction = {};
-    instruction_type inst = get_instruction_type(memory[memory_position]);
+    instruction_type inst =
+        get_instruction_type(memory, memory_position, memory_length);
     switch (inst.base)
     {
     case Instruction_None: {
@@ -492,31 +609,61 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
         return final_instruction;
     }
     case Instruction_Mov: {
-        int instruction_length = get_mov_instruction_length(
-            memory, memory_length, memory_position, inst);
-        intermediate_instruction instruction_data = load_mov_instruction_data(
+        int instruction_length = get_instruction_length(memory, memory_length,
+                                                        memory_position, inst);
+        intermediate_instruction instruction_data = load_instruction_data(
             memory, memory_length, memory_position, inst, instruction_length);
-        final_instruction = decode_mov_instruction(
+        final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        print_mov_instruction(final_instruction);
+        print_instruction(final_instruction);
         // print_instruction_binary(memory, memory_position, instruction_length,
         //                          memory_length);
         break;
     }
     case Instruction_Add: {
-        printf("Error: instruction not yet implemented");
+        int instruction_length = get_instruction_length(memory, memory_length,
+                                                        memory_position, inst);
+        print_instruction_binary(memory, memory_position, instruction_length,
+                                 memory_length);
+        intermediate_instruction instruction_data = load_instruction_data(
+            memory, memory_length, memory_position, inst, instruction_length);
+        final_instruction = decode_instruction_data(
+            memory, memory_length, memory_position, instruction_data);
+        print_instruction(final_instruction);
         break;
     }
     case Instruction_Cmp: {
-        printf("Error: instruction not yet implemented");
+        int instruction_length = get_instruction_length(memory, memory_length,
+                                                        memory_position, inst);
+        print_instruction_binary(memory, memory_position, instruction_length,
+                                 memory_length);
+        intermediate_instruction instruction_data = load_instruction_data(
+            memory, memory_length, memory_position, inst, instruction_length);
+        final_instruction = decode_instruction_data(
+            memory, memory_length, memory_position, instruction_data);
+        print_instruction(final_instruction);
+        // print_instruction_binary(memory, memory_position, instruction_length,
+        //                          memory_length);
         break;
     }
     case Instruction_Sub: {
-        printf("Error: instruction not yet implemented");
+        int instruction_length = get_instruction_length(memory, memory_length,
+                                                        memory_position, inst);
+        print_instruction_binary(memory, memory_position, instruction_length,
+                                 memory_length);
+        intermediate_instruction instruction_data = load_instruction_data(
+            memory, memory_length, memory_position, inst, instruction_length);
+        final_instruction = decode_instruction_data(
+            memory, memory_length, memory_position, instruction_data);
+        print_instruction(final_instruction);
+        // print_instruction_binary(memory, memory_position, instruction_length,
+        //                          memory_length);
         break;
     }
     case Instruction_Jnz: {
-        printf("Error: instruction not yet implemented");
+        printf("Error: Implement jnz");
+        final_instruction.length = memory_length;
+        return final_instruction;
         break;
     }
     }
