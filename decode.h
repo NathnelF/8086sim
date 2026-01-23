@@ -36,10 +36,9 @@ instruction decode_instruction_data(unsigned char *memory, int memory_length,
 
 void print_operand(instruction_operand op);
 
-// TODO(Nate): Condenese this with print_instruction?
+// TODO(Nate): Print word / byte when necessary?
+// TODO(Nate): Print + 0 on arithmetic instructions when displacement is 0?
 void print_instruction(instruction inst);
 
 instruction decode_instruction(unsigned char *memory, int memory_length,
                                int &memory_position);
-
-void print_instruction(instruction inst);

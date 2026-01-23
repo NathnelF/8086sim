@@ -40,24 +40,80 @@ instruction_type get_instruction_type(unsigned char *memory,
 
 void print_instruction_type(instruction_type instruction_val)
 {
-    const char *instruction_strings[6] = {
-        "none", "mov", "add", "sub", "cmp", "jnz",
-    };
+    if (instruction_val.base != Instruction_Jmp)
+    {
+        const char *instruction_strings[6] = {
+            "none", "mov", "add", "sub", "cmp", "jump",
+        };
 
-    printf("%s ", instruction_strings[instruction_val.base]);
+        printf("%s ", instruction_strings[instruction_val.base]);
+    }
+    else
+    {
+        printf("");
+    }
+}
+
+static const char *get_jmp_type(unsigned char opcode)
+{
+    switch (opcode)
+    {
+    case 0x70:
+        return "jo";
+    case 0x71:
+        return "jno";
+    case 0x72:
+        return "jb";
+    case 0x73:
+        return "jnb";
+    case 0x74:
+        return "je";
+    case 0x75:
+        return "jnz";
+    case 0x76:
+        return "jbe";
+    case 0x77:
+        return "jnbe";
+    case 0x78:
+        return "js";
+    case 0x79:
+        return "jns";
+    case 0x7A:
+        return "jp";
+    case 0x7B:
+        return "jnp";
+    case 0x7C:
+        return "jl";
+    case 0x7D:
+        return "jnl";
+    case 0x7E:
+        return "jle";
+    case 0x7F:
+        return "jnle";
+    case 0xE0:
+        return "loopnz";
+    case 0xE1:
+        return "loopz";
+    case 0xE2:
+        return "loop";
+    case 0xE3:
+        return "jcxz";
+    default:
+        return "jmp";
+    }
 }
 
 void print_form_type(int type)
 {
 
-    const char *mov_type_strings[7] = {
-        "None",
-        "Standard Mov",
-        "Immediate to Register/Memory",
-        "Immediate to Register",
-        "Immediate to Accumulator",
-        "Immediate Arithmetic",
-    };
+    const char *mov_type_strings[7] = {"None",
+                                       "Standard Mov",
+                                       "Immediate to Register/Memory",
+                                       "Immediate to Register",
+                                       "Immediate to Accumulator",
+
+                                       "Immediate Arithmetic",
+                                       "Conditional Jump"};
 
     printf("%s\n", mov_type_strings[type]);
 }
@@ -226,6 +282,9 @@ int get_instruction_length(unsigned char *memory, int memory_length,
         }
         return length;
     }
+    case Form_Conditional_Jump: {
+        return 2; // always two
+    }
     }
     return -1;
 }
@@ -236,7 +295,7 @@ intermediate_instruction load_instruction_data(unsigned char *memory,
                                                instruction_type inst,
                                                int instruction_length)
 {
-    print_form_type(inst.form);
+    // print_form_type(inst.form);
     intermediate_instruction instruction_data = {};
     instruction_data.type = inst;
     // print_move_type(inst.move_type);
@@ -401,6 +460,10 @@ intermediate_instruction load_instruction_data(unsigned char *memory,
         }
         return instruction_data;
     }
+    case Form_Conditional_Jump: {
+        instruction_data.displacement1 = memory[memory_position + 1];
+        return instruction_data;
+    }
     }
     printf("Error: This should not happen");
     return instruction_data;
@@ -539,6 +602,15 @@ instruction decode_instruction_data(unsigned char *memory, int memory_length,
         final_instruction.operands[1] = operand2;
         return final_instruction;
     }
+    case Form_Conditional_Jump: {
+        operand1.type = Operand_Immediate;
+        operand1.immediate =
+            (unsigned short)(signed char)instruction_data.displacement1;
+        operand2.type = Operand_None;
+        final_instruction.operands[0] = operand1;
+        final_instruction.operands[1] = operand2;
+        return final_instruction;
+    }
     }
 
     printf("Error: unexpectedly reached end of decode_instruction_data\n");
@@ -595,6 +667,16 @@ void print_instruction(instruction inst)
     printf("\n");
 }
 
+void print_jump(instruction inst, unsigned char opcode)
+{
+    const char *jump_string = get_jmp_type(opcode);
+    printf("%s ", jump_string);
+    print_operand(inst.operands[0]);
+    printf(", ");
+    print_operand(inst.operands[1]);
+    printf("\n");
+}
+
 instruction decode_instruction(unsigned char *memory, int memory_length,
                                int &memory_position)
 {
@@ -615,7 +697,7 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
             memory, memory_length, memory_position, inst, instruction_length);
         final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        print_instruction(final_instruction);
+        // print_instruction(final_instruction);
         // print_instruction_binary(memory, memory_position, instruction_length,
         //                          memory_length);
         break;
@@ -623,25 +705,21 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
     case Instruction_Add: {
         int instruction_length = get_instruction_length(memory, memory_length,
                                                         memory_position, inst);
-        print_instruction_binary(memory, memory_position, instruction_length,
-                                 memory_length);
         intermediate_instruction instruction_data = load_instruction_data(
             memory, memory_length, memory_position, inst, instruction_length);
         final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        print_instruction(final_instruction);
+        // print_instruction(final_instruction);
         break;
     }
     case Instruction_Cmp: {
         int instruction_length = get_instruction_length(memory, memory_length,
                                                         memory_position, inst);
-        print_instruction_binary(memory, memory_position, instruction_length,
-                                 memory_length);
         intermediate_instruction instruction_data = load_instruction_data(
             memory, memory_length, memory_position, inst, instruction_length);
         final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        print_instruction(final_instruction);
+        // print_instruction(final_instruction);
         // print_instruction_binary(memory, memory_position, instruction_length,
         //                          memory_length);
         break;
@@ -649,20 +727,23 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
     case Instruction_Sub: {
         int instruction_length = get_instruction_length(memory, memory_length,
                                                         memory_position, inst);
-        print_instruction_binary(memory, memory_position, instruction_length,
-                                 memory_length);
         intermediate_instruction instruction_data = load_instruction_data(
             memory, memory_length, memory_position, inst, instruction_length);
         final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        print_instruction(final_instruction);
+        // print_instruction(final_instruction);
         // print_instruction_binary(memory, memory_position, instruction_length,
         //                          memory_length);
         break;
     }
-    case Instruction_Jnz: {
-        printf("Error: Implement jnz");
-        final_instruction.length = memory_length;
+    case Instruction_Jmp: {
+        int instruction_length = get_instruction_length(memory, memory_length,
+                                                        memory_position, inst);
+        intermediate_instruction instruction_data = load_instruction_data(
+            memory, memory_length, memory_position, inst, instruction_length);
+        final_instruction = decode_instruction_data(
+            memory, memory_length, memory_position, instruction_data);
+        print_jump(final_instruction, memory[memory_position]);
         return final_instruction;
         break;
     }

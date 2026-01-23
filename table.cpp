@@ -80,6 +80,47 @@ void init_instruction_table()
     instruction_table[0b00111100] = {Instruction_Cmp, Form_Immediate_Accum};
     instruction_table[0b00111101] = {Instruction_Cmp, Form_Immediate_Accum};
 
-    //  TODO(Nate): Add jnz instructions
-    //  instructions?
+    // Conditional jumps
+    instruction_table[0b01110000] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jo
+    instruction_table[0b01110001] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jno
+    instruction_table[0b01110010] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jb/jnae/jc
+    instruction_table[0b01110011] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jnb/jae/jnc
+    instruction_table[0b01110100] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // je/jz
+    instruction_table[0b01110101] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jne/jnz
+    instruction_table[0b01110110] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jbe/jna
+    instruction_table[0b01110111] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jnbe/ja
+    instruction_table[0b01111000] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // js
+    instruction_table[0b01111001] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jns
+    instruction_table[0b01111010] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jp/jpe
+    instruction_table[0b01111011] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jnp/jpo
+    instruction_table[0b01111100] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jl/jnge
+    instruction_table[0b01111101] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jnl/jge
+    instruction_table[0b01111110] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jle/jng
+    instruction_table[0b01111111] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jnle/jg
+
+    // Loop instructions
+    instruction_table[0b11100000] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // loopnz/loopne
+    instruction_table[0b11100001] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // loopz/loope
+    instruction_table[0b11100010] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // loop
+    instruction_table[0b11100011] = {Instruction_Jmp,
+                                     Form_Conditional_Jump}; // jcxz
 }

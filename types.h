@@ -35,7 +35,7 @@ enum base_instruction
     Instruction_Add,
     Instruction_Sub,
     Instruction_Cmp,
-    Instruction_Jnz,
+    Instruction_Jmp,
     Instruction_Arithmetic,
 };
 
@@ -52,9 +52,10 @@ enum form_type
     Form_Immediate_Reg,
     Form_Immediate_Accum,
     Form_Immediate_Arithmetic,
+    Form_Conditional_Jump,
 };
 
-// TODO(Nate): add detailed types for add, sub, cmp, jnz
+// TOOD(Nate): Figure out how to account for jmp instructions.
 
 struct instruction_type
 {
