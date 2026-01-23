@@ -71,6 +71,7 @@ enum operand_type
     Operand_Register,
     Operand_Memory,
     Operand_Immediate,
+    Operand_Signed_Immediate,
 };
 
 struct instruction_operand
@@ -80,6 +81,7 @@ struct instruction_operand
         register_value register_index;
         effective_address address;
         unsigned short immediate;
+        short signed_immediate;
     };
 };
 

@@ -587,14 +587,15 @@ instruction decode_instruction_data(unsigned char *memory, int memory_length,
         }
 
         // one is immediate
-        operand2.type = Operand_Immediate;
         if (instruction_data.s == 0b1 && instruction_data.w == 0b1)
         {
-            operand2.immediate =
-                (unsigned short)(short)(signed char)instruction_data.data1;
+            operand2.type = Operand_Signed_Immediate;
+            operand2.signed_immediate =
+                (short)(signed char)instruction_data.data1;
         }
         else
         {
+            operand2.type = Operand_Immediate;
             operand2.immediate =
                 instruction_data.data1 | ((instruction_data.data2) << 8);
         }
@@ -603,9 +604,9 @@ instruction decode_instruction_data(unsigned char *memory, int memory_length,
         return final_instruction;
     }
     case Form_Conditional_Jump: {
-        operand1.type = Operand_Immediate;
-        operand1.immediate =
-            (unsigned short)(signed char)instruction_data.displacement1;
+        operand1.type = Operand_Signed_Immediate;
+        operand1.signed_immediate =
+            (short)(signed char)instruction_data.displacement1;
         operand2.type = Operand_None;
         final_instruction.operands[0] = operand1;
         final_instruction.operands[1] = operand2;
@@ -655,6 +656,9 @@ void print_operand(instruction_operand op)
         printf("%hu", op.immediate);
         break;
     }
+    case Operand_Signed_Immediate: {
+        printf("%d", op.signed_immediate);
+    }
     }
 }
 
@@ -697,7 +701,7 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
             memory, memory_length, memory_position, inst, instruction_length);
         final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        // print_instruction(final_instruction);
+        print_instruction(final_instruction);
         // print_instruction_binary(memory, memory_position, instruction_length,
         //                          memory_length);
         break;
@@ -709,7 +713,7 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
             memory, memory_length, memory_position, inst, instruction_length);
         final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        // print_instruction(final_instruction);
+        print_instruction(final_instruction);
         break;
     }
     case Instruction_Cmp: {
@@ -719,7 +723,7 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
             memory, memory_length, memory_position, inst, instruction_length);
         final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        // print_instruction(final_instruction);
+        print_instruction(final_instruction);
         // print_instruction_binary(memory, memory_position, instruction_length,
         //                          memory_length);
         break;
@@ -731,7 +735,7 @@ instruction decode_instruction(unsigned char *memory, int memory_length,
             memory, memory_length, memory_position, inst, instruction_length);
         final_instruction = decode_instruction_data(
             memory, memory_length, memory_position, instruction_data);
-        // print_instruction(final_instruction);
+        print_instruction(final_instruction);
         // print_instruction_binary(memory, memory_position, instruction_length,
         //                          memory_length);
         break;
